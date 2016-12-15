@@ -110,13 +110,8 @@ class WorkflowPlugin(plugins.SingletonPlugin):
         # state field is not in pkg_dict.
         pkg_dict = toolkit.get_action('package_show')(data_dict={'id': pkg_dict['id']})
         if pkg_dict.get("process_state"):
-            if pkg_dict['process_state'] != 'Draft' and \
-               not pkg_dict['state'] in ['active', 'deleted']:
+            if pkg_dict['process_state'] != 'Draft' and pkg_dict['state'] == "draft":
                 pkg_dict['state'] = 'active' 
-                pkg_dict = toolkit.get_action('package_update')(data_dict=pkg_dict)
-            if pkg_dict['process_state'] == 'Draft' and \
-               not pkg_dict['state'] in ['draft', 'deleted']:
-                pkg_dict['state'] = 'draft' 
                 pkg_dict = toolkit.get_action('package_update')(data_dict=pkg_dict)
 
 
