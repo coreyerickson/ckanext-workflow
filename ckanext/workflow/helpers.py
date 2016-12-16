@@ -7,7 +7,7 @@ from ckan.plugins.toolkit import  Invalid, _
 import  ckanext.scheming.helpers as h
 import pylons.config as config
 import re
-
+import ckan.lib.helpers as help
 NotFound = toolkit.ObjectNotFound
 
 
@@ -85,14 +85,14 @@ def get_package_process_state_by_name(pkg_name):
 
 
 def _get_process_state_field(dataset_type):
-    opendata_scheme = h.scheming_get_schema('dataset', dataset_type)
-    fields = opendata_scheme['dataset_fields']
+    dataset_scheme = h.scheming_get_schema('dataset', dataset_type)
+    fields = dataset_scheme['dataset_fields']
     return h.scheming_field_by_name(fields, "process_state")
 
 
 def get_required_fields_name(dataset_type):
-    opendata_scheme = h.scheming_get_schema('dataset', dataset_type)
-    fields = opendata_scheme['dataset_fields']
+    dataset_scheme = h.scheming_get_schema('dataset', dataset_type)
+    fields = dataset_scheme['dataset_fields']
     required_fields_name = []
     for f in fields:
         if f.get('required'):
@@ -121,3 +121,32 @@ def get_dataset_types():
         type = re.sub(r'.*?\:(.*?).json', r'\1', type)
         type_list.append(type)
     return type_list
+
+def get_required_fields_name_label_dict(dataset_type):
+    dataset_scheme = h.scheming_get_schema('dataset', dataset_type)
+    fields = dataset_scheme['dataset_fields']
+    required_dict = {}
+    for f in fields:
+        if f.get('required'):
+            required_dict[f.get('field_name')] = f.get('label')
+    return  required_dict
+
+def get_required_items_ready(pkg_dict):
+    if not pkg_dict:
+        return []
+    if not pkg_dict.get("id"):
+        m = re.search(r"/edit/([^/]*)", help.full_current_url())
+        pkg_dict = toolkit.get_action("package_show")(data_dict={"id": m.group(1)})
+    if not pkg_dict.get("type"):
+        m = re.search(r"/([^/]*?)/new", help.full_current_url())
+        type = m.group(1)
+    else:
+        type = pkg_dict['type']
+    required_dict = get_required_fields_name_label_dict(type)
+    missing = []
+    for e in required_dict.keys():
+        if e in pkg_dict and not pkg_dict[e]:
+            missing.append('{0}: Missing value'.format(required_dict[e]))
+    if not pkg_dict['resources']:
+        missing.append("At least one resource must exist")
+    return missing

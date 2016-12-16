@@ -16,6 +16,10 @@
       {# not need to include draft state if not in create mode #}
       {% if data['last_process_state'] and c.value == "Draft" %} {# last_process_state exist means not in create mode#}
          {# do nothing, just pass #}
+      {% elif not data['last_process_state'] and c.value == "Submitted" %} {# create mode#}
+         {# do nothing, just pass #}
+      {% elif data['last_process_state'] and h.ab_ps_get_required_items_ready(data) and c.value == "Submitted" %} {# modified mode#}
+         {# do nothing, just pass #}    
       {% else %}
           {% if h.ab_ps_allow_full_work_flow(current_user_name, org_id) %}
             {%- do options.append({
@@ -53,5 +57,6 @@
           }
     )
 %}
+
     {%- snippet 'scheming/form_snippets/help_text.html', field=field -%}
 {% endcall %}

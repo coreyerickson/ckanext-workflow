@@ -142,9 +142,7 @@ class WorkflowPlugin(plugins.SingletonPlugin):
                 pkg_dict['state'] = 'active'
             # has to update the old dataset in database to support new feature like 
             # on process_state
-            import pprint
-            pprint.pprint(pkg_dict)
-            toolkit.get_action('package_update')(data_dict=pkg_dict)
+            #toolkit.get_action('package_update')(data_dict=pkg_dict)
         return pkg_dict
 
     def before_search(self, search_params):
@@ -193,7 +191,8 @@ class WorkflowPlugin(plugins.SingletonPlugin):
             'ab_ps_get_all_process_states': helpers.get_all_process_states,
             'ab_ps_get_required_fields_name': helpers.get_required_fields_name,
             'ab_ps_get_process_state_list_not_allow_incomplete': helpers.get_process_state_list_not_allow_incomplete,
-            'ab_ps_get_dataset_types': helpers.get_dataset_types
+            'ab_ps_get_dataset_types': helpers.get_dataset_types,
+            'ab_ps_get_required_items_ready': helpers.get_required_items_ready
         }
 
     """
