@@ -15,10 +15,10 @@
 			</div>
 		{% endif %}
 		{% block missing_notice %}
-		  {% if c.action == "edit" %}
+		  {% if c.action == "edit" and h.ab_ps_has_process_state_field(c.pkg.id) %}
 		  	{% if h.ab_ps_get_required_items_ready(c.pkg) %}
 		  	  <div class="container notice">
-		  	    <h4>Before submit, please finish this items first in Modified state </h4>
+		  	    <h4>Before submit, please finish this items first in Modified state</h4>
 			    <ul>
 	              {% for m in h.ab_ps_get_required_items_ready(c.pkg) %}
 	                <li>  {{ m }} </li>

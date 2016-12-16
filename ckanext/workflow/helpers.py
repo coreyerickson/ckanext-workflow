@@ -107,6 +107,13 @@ def get_all_process_states(dataset_type):
     return [ c['value'] for c in ps['choices'] ]
 
 
+def has_process_state_field(dataset_type):
+    ps = _get_process_state_field(dataset_type)
+    if not ps:
+        return False
+    return True
+
+
 def get_process_state_list_not_allow_incomplete(dataset_type):
     ps = _get_process_state_field(dataset_type)
     if not ps:
@@ -122,6 +129,7 @@ def get_dataset_types():
         type_list.append(type)
     return type_list
 
+
 def get_required_fields_name_label_dict(dataset_type):
     dataset_scheme = h.scheming_get_schema('dataset', dataset_type)
     fields = dataset_scheme['dataset_fields']
@@ -130,6 +138,7 @@ def get_required_fields_name_label_dict(dataset_type):
         if f.get('required'):
             required_dict[f.get('field_name')] = f.get('label')
     return  required_dict
+
 
 def get_required_items_ready(pkg_dict):
     if not pkg_dict:
@@ -147,6 +156,30 @@ def get_required_items_ready(pkg_dict):
     for e in required_dict.keys():
         if e in pkg_dict and not pkg_dict[e]:
             missing.append('{0}: Missing value'.format(required_dict[e]))
-    if not pkg_dict['resources']:
+            
+    if not pkg_dict['resources'] and resource_required(type):
         missing.append("At least one resource must exist")
     return missing
+
+
+def resource_required(dataset_type):
+    dataset_scheme = h.scheming_get_schema('dataset', dataset_type)
+    fields = dataset_scheme['dataset_fields']
+    for f in fields:
+        if f.get('validators') and re.search("ab_ps_resource_required", f.get('validators')):
+            return True
+    return False
+
+
+def has_process_state_field(id):
+    try: 
+        pkg_dict = toolkit.get_action("package_show")(data_dict={"id": id})
+    except NotFound:
+        return False
+    else:
+        try:
+            pkg_dict['process_state']
+        except KeyError:
+            return False
+        else:
+            return True
