@@ -15,7 +15,8 @@ from logic import validation
 from ckan.plugins.toolkit  import c
 import ckan.lib.helpers as h
 import re
-
+from datetime import date
+from dateutil import parser
 
 class WorkflowPlugin(plugins.SingletonPlugin):
     """
@@ -86,7 +87,7 @@ class WorkflowPlugin(plugins.SingletonPlugin):
         return ps_exist
 
                     
-    def _update_extra(self, context, pkg_dict):
+    def _update_package_process_state_table(self, context, pkg_dict):
         # pkg_dict does not bring up all fields to UI
         pkg_dict = toolkit.get_action("package_show")(data_dict={"id": pkg_dict['id']})
         package_last_process_state = get_package_last_process_state(context['session'], 
@@ -110,28 +111,51 @@ class WorkflowPlugin(plugins.SingletonPlugin):
             add_package_process_state(context['session'], pkg_dict, modifior_id=modifior_id)
 
                 
-    def _update_state(self, context, pkg_dict):
+    def _update_pkg(self, context, pkg_dict):
         # state field is not in pkg_dict.
         pkg_dict = toolkit.get_action('package_show')(data_dict={'id': pkg_dict['id']})
+
+        update_flag = False
+        # update state field
         if pkg_dict.get("process_state"):
             if pkg_dict['process_state'] != 'Draft' and pkg_dict['state'] == "draft":
                 pkg_dict['state'] = 'active' 
-                pkg_dict = toolkit.get_action('package_update')(data_dict=pkg_dict)
+                update_flag = True
+
+        #update for published_date field
+        if 'published_date' in pkg_dict:
+            if pkg_dict['published_date']:
+                dt = parser.parse(pkg_dict['published_date']).date()
+                if dt > date.today() and pkg_dict['process_state'] == 'Approved' and not pkg_dict['private']:
+                    pkg_dict['private'] = True
+                    update_flag = True
+            else: #published_date field is empty
+                if pkg_dict['process_state'] == 'Approved':
+                    pkg_dict['published_date'] = date.today()
+                    update_flag = True
+        else: # no published_date field in pkg_dict
+            if helpers.has_published_date_field_in_schema(pkg_dict['type']):
+                if pkg_dict['process_state'] == 'Approved':
+                    pkg_dict['published_date'] = str(date.today())
+                    update_flag = True
+        
+        if update_flag:
+            pkg_dict = toolkit.get_action('package_update')(data_dict=pkg_dict)
 
 
     def after_update(self, context, pkg_dict):
         if not helpers.has_process_state_field_in_schema(pkg_dict['type']):
             return
-        self._update_extra(context, pkg_dict)
-        self._update_state(context, pkg_dict)
+        self._update_package_process_state_table(context, pkg_dict)
+        self._update_pkg(context, pkg_dict)
         return super(WorkflowPlugin, self).after_update(context, pkg_dict)
 
                 
     def after_create(self, context, pkg_dict):
         if not helpers.has_process_state_field_in_schema(pkg_dict['type']):
             return
-        self._update_extra(context, pkg_dict)
-        self._update_state(context, pkg_dict)
+        self._update_package_process_state_table(context, pkg_dict)
+        self._update_pkg(context, pkg_dict)
         return super(WorkflowPlugin, self).after_create(context, pkg_dict)
     
 

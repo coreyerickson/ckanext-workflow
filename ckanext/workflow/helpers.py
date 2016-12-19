@@ -114,6 +114,15 @@ def has_process_state_field_in_schema(dataset_type):
     return True
 
 
+def has_published_date_field_in_schema(dataset_type):
+    dataset_scheme = h.scheming_get_schema('dataset', dataset_type)
+    fields = dataset_scheme['dataset_fields']
+    pd = h.scheming_field_by_name(fields, "published_date")
+    if not pd:
+        return False
+    return True
+
+
 def get_process_state_list_not_allow_incomplete(dataset_type):
     ps = _get_process_state_field(dataset_type)
     if not ps:
@@ -172,6 +181,8 @@ def resource_required(dataset_type):
 
 
 def has_process_state_field(pkg_id):
+    if not pkg_id:
+        return False
     try: 
         pkg_dict = toolkit.get_action("package_show")(data_dict={"id": pkg_id})
     except NotFound:
