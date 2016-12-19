@@ -52,6 +52,8 @@ class WorkflowPlugin(plugins.SingletonPlugin):
     IPackageController
     """       
     def after_show(self, context, pkg_dict):
+        if not helpers.has_process_state_field_in_schema(pkg_dict['type']):
+            return
         package_last_process_state = get_package_last_process_state(context['session'], 
         	                                                        pkg_dict['id'])
         #set up the last_process_state field's value.
@@ -62,7 +64,7 @@ class WorkflowPlugin(plugins.SingletonPlugin):
         #set up the process_state field for old dataset with no process_state
         ps_exist = self._check_extras(pkg_dict)
 
-        has_process_state_field = helpers.has_process_state_field(pkg_dict['type'])
+        has_process_state_field = helpers.has_process_state_field_in_schema(pkg_dict['type'])
 
         if not pkg_dict.get("process_state") and not ps_exist and has_process_state_field:
             if not pkg_dict.get('private'): # public
@@ -118,23 +120,29 @@ class WorkflowPlugin(plugins.SingletonPlugin):
 
 
     def after_update(self, context, pkg_dict):
+        if not helpers.has_process_state_field_in_schema(pkg_dict['type']):
+            return
         self._update_extra(context, pkg_dict)
         self._update_state(context, pkg_dict)
         return super(WorkflowPlugin, self).after_update(context, pkg_dict)
 
                 
     def after_create(self, context, pkg_dict):
+        if not helpers.has_process_state_field_in_schema(pkg_dict['type']):
+            return
         self._update_extra(context, pkg_dict)
         self._update_state(context, pkg_dict)
         return super(WorkflowPlugin, self).after_create(context, pkg_dict)
     
 
     def before_view(self, pkg_dict):
+        if not helpers.has_process_state_field_in_schema(pkg_dict['type']):
+            return pkg_dict
         if not pkg_dict.get('reason'):
             pkg_dict['reason'] = 'NA'
         #handle old data with no process_state field
         ps_exist = self._check_extras(pkg_dict)
-        
+
         if not pkg_dict.get('process_state') and not ps_exist:
             if not pkg_dict.get('private'):
                 pkg_dict['process_state'] = 'Approved'
@@ -194,9 +202,9 @@ class WorkflowPlugin(plugins.SingletonPlugin):
             'ab_ps_get_required_fields_name': helpers.get_required_fields_name,
             'ab_ps_get_process_state_list_not_allow_incomplete': helpers.get_process_state_list_not_allow_incomplete,
             'ab_ps_get_dataset_types': helpers.get_dataset_types,
-            'ab_ps_get_required_items_ready': helpers.get_required_items_ready,
+            'ab_ps_get_required_items_missing': helpers.get_required_items_missing,
             'ab_ps_has_process_state_field': helpers.has_process_state_field,
-            'ab_ps_has_process_state_field': helpers.has_process_state_field
+            'ab_ps_has_process_state_field_in_schema': helpers.has_process_state_field_in_schema
         }
 
     """

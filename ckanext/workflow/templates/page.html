@@ -16,20 +16,24 @@
 		{% endif %}
 		{% block missing_notice %}
 		  {% if c.action == "edit" and h.ab_ps_has_process_state_field(c.pkg.id) %}
-		  	{% if h.ab_ps_get_required_items_ready(c.pkg) %}
+		  	{% if h.ab_ps_get_required_items_missing(c.pkg) %}
 		  	  <div class="container notice">
-		  	    <h4>Before submit, please finish this items first in Modified state</h4>
-			    <ul>
-	              {% for m in h.ab_ps_get_required_items_ready(c.pkg) %}
-	                <li>  {{ m }} </li>
-	              {% endfor %}
-	            </ul>
+				<h4>Before submit, please finish this items first in Modified state</h4>
+				<ul>
+					{% for m in h.ab_ps_get_required_items_missing(c.pkg) %}
+						<li>  {{ m }} </li>
+					{% endfor %}
+				</ul>
 	          </div>
 	        {% else %}
 	          {% if not h.ab_ps_is_admin(current_user_name, org_id) and 
                     not h.ab_ps_is_authorized_member(current_user_name, org_id, '') %}
 	            <div class="container ready"> 
 	            	<h4>Submitted and Modified states are ready</h4>
+	            </div>
+	          {% else %}
+	             <div class="container ready"> 
+	            	<h4>Modified, Submitted, Pending, Rejected, Approved states are ready</h4>
 	            </div>
 	          {% endif %}
 	        {% endif %}

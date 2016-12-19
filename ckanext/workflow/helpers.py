@@ -107,7 +107,7 @@ def get_all_process_states(dataset_type):
     return [ c['value'] for c in ps['choices'] ]
 
 
-def has_process_state_field(dataset_type):
+def has_process_state_field_in_schema(dataset_type):
     ps = _get_process_state_field(dataset_type)
     if not ps:
         return False
@@ -140,7 +140,7 @@ def get_required_fields_name_label_dict(dataset_type):
     return  required_dict
 
 
-def get_required_items_ready(pkg_dict):
+def get_required_items_missing(pkg_dict):
     if not pkg_dict:
         return []
     if not pkg_dict.get("id"):
@@ -156,7 +156,7 @@ def get_required_items_ready(pkg_dict):
     for e in required_dict.keys():
         if e in pkg_dict and not pkg_dict[e]:
             missing.append('{0}: Missing value'.format(required_dict[e]))
-            
+
     if not pkg_dict['resources'] and resource_required(type):
         missing.append("At least one resource must exist")
     return missing
