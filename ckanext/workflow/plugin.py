@@ -204,7 +204,8 @@ class WorkflowPlugin(plugins.SingletonPlugin):
             'ab_ps_get_dataset_types': helpers.get_dataset_types,
             'ab_ps_get_required_items_missing': helpers.get_required_items_missing,
             'ab_ps_has_process_state_field': helpers.has_process_state_field,
-            'ab_ps_has_process_state_field_in_schema': helpers.has_process_state_field_in_schema
+            'ab_ps_has_process_state_field_in_schema': helpers.has_process_state_field_in_schema,
+            'ab_ps_is_in_process_state_list_not_allow_incomplete': helpers.is_in_process_state_list_not_allow_incomplete
         }
 
     """

@@ -117,7 +117,7 @@ def has_process_state_field_in_schema(dataset_type):
 def get_process_state_list_not_allow_incomplete(dataset_type):
     ps = _get_process_state_field(dataset_type)
     if not ps:
-        raise NotFound(_("Field prcess_state deos not exist. Please check your json file!"))
+        return []
     return ps['form_not_allow_incomplete_dataset']
 
 
@@ -171,9 +171,9 @@ def resource_required(dataset_type):
     return False
 
 
-def has_process_state_field(id):
+def has_process_state_field(pkg_id):
     try: 
-        pkg_dict = toolkit.get_action("package_show")(data_dict={"id": id})
+        pkg_dict = toolkit.get_action("package_show")(data_dict={"id": pkg_id})
     except NotFound:
         return False
     else:
@@ -183,3 +183,17 @@ def has_process_state_field(id):
             return False
         else:
             return True
+
+
+def is_in_process_state_list_not_allow_incomplete(pkg_id):
+    try:
+       pkg_dict = toolkit.get_action("package_show")(data_dict={"id": pkg_id}) 
+    except NotFound:
+        return False
+    else:
+        last_process_state = pkg_dict['last_process_state']
+        lst = get_process_state_list_not_allow_incomplete(pkg_dict['type'])
+        if last_process_state in lst:
+            return True
+        else:
+            return False
