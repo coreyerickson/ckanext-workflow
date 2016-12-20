@@ -54,6 +54,8 @@ class WorkflowPlugin(plugins.SingletonPlugin):
     """       
     def after_show(self, context, pkg_dict):
         if not helpers.has_process_state_field_in_schema(pkg_dict['type']):
+            if pkg_dict['state'] == 'draft':
+                pkg_dict['state'] = 'active'
             return
         package_last_process_state = get_package_last_process_state(context['session'], 
         	                                                        pkg_dict['id'])
