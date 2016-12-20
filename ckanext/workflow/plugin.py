@@ -184,8 +184,9 @@ class WorkflowPlugin(plugins.SingletonPlugin):
     def before_search(self, search_params):
     	user_member_of_orgs = [org['id'] for org
                                in h.organizations_available('read')]
-
-        if (c.group and c.group.id in user_member_of_orgs):
+        # sysadmin or group is in the available origanizations
+        if ( helpers.is_admin(str(c.user), '') or \
+             c.group and c.group.id in user_member_of_orgs):
             # added for more control on result datasets 
             # based on our requirement
             search_params.update(
