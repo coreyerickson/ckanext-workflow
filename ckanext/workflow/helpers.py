@@ -17,6 +17,8 @@ def is_admin(user, org):
                 org : name or id,
         rtype: boolean
     """
+    if not org or not user:
+        return False
     username = model.User.get(user).name
     user_id = model.User.get(user).id
     if authz.is_sysadmin(username):
@@ -42,7 +44,7 @@ def is_authorized_member(user, org, process_state):
                 org : name or id,
         rtype: boolean
     """
-    if not org:
+    if not org or not user:
         return False
     username = model.User.get(user).name
     groupname = model.Group.get(org).name
@@ -86,6 +88,8 @@ def get_package_process_state_by_name(pkg_name):
 
 def _get_process_state_field(dataset_type):
     dataset_scheme = h.scheming_get_schema('dataset', dataset_type)
+    if not dataset_scheme:
+        return None
     fields = dataset_scheme['dataset_fields']
     return h.scheming_field_by_name(fields, "process_state")
 
@@ -101,6 +105,8 @@ def get_required_fields_name(dataset_type):
 
 
 def get_all_process_states(dataset_type):
+    if not dataset_type:
+        return []
     ps = _get_process_state_field(dataset_type)
     if not ps:
         return []
@@ -108,6 +114,8 @@ def get_all_process_states(dataset_type):
 
 
 def has_process_state_field_in_schema(dataset_type):
+    if not dataset_type:
+        return False
     ps = _get_process_state_field(dataset_type)
     if not ps:
         return False
@@ -115,6 +123,8 @@ def has_process_state_field_in_schema(dataset_type):
 
 
 def has_published_date_field_in_schema(dataset_type):
+    if not dataset_type:
+        return False
     dataset_scheme = h.scheming_get_schema('dataset', dataset_type)
     fields = dataset_scheme['dataset_fields']
     pd = h.scheming_field_by_name(fields, "published_date")
@@ -124,6 +134,8 @@ def has_published_date_field_in_schema(dataset_type):
 
 
 def get_process_state_list_not_allow_incomplete(dataset_type):
+    if not dataset_type:
+        return []
     ps = _get_process_state_field(dataset_type)
     if not ps:
         return []
@@ -132,6 +144,8 @@ def get_process_state_list_not_allow_incomplete(dataset_type):
 
 def get_dataset_types():
     types = config['scheming.dataset_schemas']
+    if not types:
+        return []
     type_list = []
     for type in types.split():
         type = re.sub(r'.*?\:(.*?).json', r'\1', type)
@@ -140,6 +154,8 @@ def get_dataset_types():
 
 
 def get_required_fields_name_label_dict(dataset_type):
+    if not dataset_type:
+        return {}
     dataset_scheme = h.scheming_get_schema('dataset', dataset_type)
     fields = dataset_scheme['dataset_fields']
     required_dict = {}
@@ -172,6 +188,8 @@ def get_required_items_missing(pkg_dict):
 
 
 def resource_required(dataset_type):
+    if not dataset_type:
+        return False
     dataset_scheme = h.scheming_get_schema('dataset', dataset_type)
     fields = dataset_scheme['dataset_fields']
     for f in fields:
@@ -197,6 +215,8 @@ def has_process_state_field(pkg_id):
 
 
 def is_in_process_state_list_not_allow_incomplete(pkg_id):
+    if not pkg_id:
+        return False
     try:
        pkg_dict = toolkit.get_action("package_show")(data_dict={"id": pkg_id}) 
     except NotFound:
