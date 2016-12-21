@@ -22,10 +22,7 @@ def scheming_required(key, flattened_data, errors, context):
             if key[0] in helpers.get_required_fields_name(data_dict['type']):
                 if not data_dict[key[0]] or data_dict[key[0]] == '[]':
                     raise Invalid(_('Missing value'))
-        elif not data_dict['process_state']: # for old dataset with no this field. Also the other fields with
-                                            #  validator 'scheming_required' must switch to ab_ps_scheming_required
-                                            #  if you want to bypass those fields
-            pass
+
 
 
 
