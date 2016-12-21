@@ -15,7 +15,8 @@ from logic import validation
 from ckan.plugins.toolkit  import c
 import ckan.lib.helpers as h
 import re
-
+from datetime import date
+from dateutil import parser
 
 class WorkflowPlugin(plugins.SingletonPlugin):
     """
@@ -52,6 +53,10 @@ class WorkflowPlugin(plugins.SingletonPlugin):
     IPackageController
     """       
     def after_show(self, context, pkg_dict):
+        if not helpers.has_process_state_field_in_schema(pkg_dict['type']):
+            if pkg_dict['state'] == 'draft':
+                pkg_dict['state'] = 'active'
+            return
         package_last_process_state = get_package_last_process_state(context['session'], 
         	                                                        pkg_dict['id'])
         #set up the last_process_state field's value.
@@ -62,7 +67,9 @@ class WorkflowPlugin(plugins.SingletonPlugin):
         #set up the process_state field for old dataset with no process_state
         ps_exist = self._check_extras(pkg_dict)
 
-        if not pkg_dict.get("process_state") and not ps_exist:
+        has_process_state_field = helpers.has_process_state_field_in_schema(pkg_dict['type'])
+
+        if not pkg_dict.get("process_state") and not ps_exist and has_process_state_field:
             if not pkg_dict.get('private'): # public
                 pkg_dict['process_state'] = 'Approved'
                 pkg_dict['last_process_state'] = 'Approved'
@@ -82,7 +89,7 @@ class WorkflowPlugin(plugins.SingletonPlugin):
         return ps_exist
 
                     
-    def _update_extra(self, context, pkg_dict):
+    def _update_package_process_state_table(self, context, pkg_dict):
         # pkg_dict does not bring up all fields to UI
         pkg_dict = toolkit.get_action("package_show")(data_dict={"id": pkg_dict['id']})
         package_last_process_state = get_package_last_process_state(context['session'], 
@@ -106,33 +113,57 @@ class WorkflowPlugin(plugins.SingletonPlugin):
             add_package_process_state(context['session'], pkg_dict, modifior_id=modifior_id)
 
                 
-    def _update_state(self, context, pkg_dict):
+    def _update_pkg(self, context, pkg_dict):
         # state field is not in pkg_dict.
         pkg_dict = toolkit.get_action('package_show')(data_dict={'id': pkg_dict['id']})
+
+        update_flag = False
+        # update state field
         if pkg_dict.get("process_state"):
-            if pkg_dict['process_state'] != 'Draft' and \
-               not pkg_dict['state'] in ['active', 'deleted']:
+            if pkg_dict['process_state'] != 'Draft' and pkg_dict['state'] == "draft":
                 pkg_dict['state'] = 'active' 
-                pkg_dict = toolkit.get_action('package_update')(data_dict=pkg_dict)
-            if pkg_dict['process_state'] == 'Draft' and \
-               not pkg_dict['state'] in ['draft', 'deleted']:
-                pkg_dict['state'] = 'draft' 
-                pkg_dict = toolkit.get_action('package_update')(data_dict=pkg_dict)
+                update_flag = True
+
+        #update for published_date field
+        if 'published_date' in pkg_dict:
+            if pkg_dict['published_date']:
+                dt = parser.parse(pkg_dict['published_date']).date()
+                if dt > date.today() and pkg_dict['process_state'] == 'Approved' and not pkg_dict['private']:
+                    pkg_dict['private'] = True
+                    update_flag = True
+            else: #published_date field is empty
+                if pkg_dict['process_state'] == 'Approved':
+                    pkg_dict['published_date'] = date.today()
+                    update_flag = True
+        else: # no published_date field in pkg_dict
+            if helpers.has_published_date_field_in_schema(pkg_dict['type']):
+                if pkg_dict['process_state'] == 'Approved':
+                    pkg_dict['published_date'] = str(date.today())
+                    update_flag = True
+        
+        if update_flag:
+            pkg_dict = toolkit.get_action('package_update')(data_dict=pkg_dict)
 
 
     def after_update(self, context, pkg_dict):
-        self._update_extra(context, pkg_dict)
-        self._update_state(context, pkg_dict)
+        if not helpers.has_process_state_field_in_schema(pkg_dict['type']):
+            return
+        self._update_package_process_state_table(context, pkg_dict)
+        self._update_pkg(context, pkg_dict)
         return super(WorkflowPlugin, self).after_update(context, pkg_dict)
 
                 
     def after_create(self, context, pkg_dict):
-        self._update_extra(context, pkg_dict)
-        self._update_state(context, pkg_dict)
+        if not helpers.has_process_state_field_in_schema(pkg_dict['type']):
+            return
+        self._update_package_process_state_table(context, pkg_dict)
+        self._update_pkg(context, pkg_dict)
         return super(WorkflowPlugin, self).after_create(context, pkg_dict)
     
 
     def before_view(self, pkg_dict):
+        if not helpers.has_process_state_field_in_schema(pkg_dict['type']):
+            return pkg_dict
         if not pkg_dict.get('reason'):
             pkg_dict['reason'] = 'NA'
         #handle old data with no process_state field
@@ -147,16 +178,15 @@ class WorkflowPlugin(plugins.SingletonPlugin):
                 pkg_dict['state'] = 'active'
             # has to update the old dataset in database to support new feature like 
             # on process_state
-            import pprint
-            pprint.pprint(pkg_dict)
-            toolkit.get_action('package_update')(data_dict=pkg_dict)
+            #toolkit.get_action('package_update')(data_dict=pkg_dict)
         return pkg_dict
 
     def before_search(self, search_params):
     	user_member_of_orgs = [org['id'] for org
                                in h.organizations_available('read')]
-
-        if (c.group and c.group.id in user_member_of_orgs):
+        # sysadmin or group is in the available origanizations
+        if ( helpers.is_admin(str(c.user), '') or \
+             c.group and c.group.id in user_member_of_orgs):
             # added for more control on result datasets 
             # based on our requirement
             search_params.update(
@@ -198,7 +228,11 @@ class WorkflowPlugin(plugins.SingletonPlugin):
             'ab_ps_get_all_process_states': helpers.get_all_process_states,
             'ab_ps_get_required_fields_name': helpers.get_required_fields_name,
             'ab_ps_get_process_state_list_not_allow_incomplete': helpers.get_process_state_list_not_allow_incomplete,
-            'ab_ps_get_dataset_types': helpers.get_dataset_types
+            'ab_ps_get_dataset_types': helpers.get_dataset_types,
+            'ab_ps_get_required_items_missing': helpers.get_required_items_missing,
+            'ab_ps_has_process_state_field': helpers.has_process_state_field,
+            'ab_ps_has_process_state_field_in_schema': helpers.has_process_state_field_in_schema,
+            'ab_ps_is_in_process_state_list_not_allow_incomplete': helpers.is_in_process_state_list_not_allow_incomplete
         }
 
     """
