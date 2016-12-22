@@ -145,11 +145,6 @@ class WorkflowPlugin(plugins.SingletonPlugin):
             else:
                 pkg_dict['process_state'] = 'Modified' 
                 pkg_dict['state'] = 'active'
-            # has to update the old dataset in database to support new feature like 
-            # on process_state
-            import pprint
-            pprint.pprint(pkg_dict)
-            toolkit.get_action('package_update')(data_dict=pkg_dict)
         return pkg_dict
 
     def before_search(self, search_params):
