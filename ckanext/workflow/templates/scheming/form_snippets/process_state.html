@@ -21,7 +21,7 @@
          {# Submitted not included in create mode #}
       {% elif data['last_process_state'] and 
               h.ab_ps_get_required_items_missing(data) and 
-              c.value in form_not_allow_incomplete_dataset %} {# Modified state, edit mode#}
+              c.value in form_not_allow_incomplete_dataset %} {# modified state#}
          {# Not include Submitted, Pending, Rejected, Approved states #}    
       {% else %}
           {% if h.ab_ps_allow_full_work_flow(current_user_name, org_id) %}
@@ -55,8 +55,8 @@
     classes=['control-medium'],
     is_required=h.scheming_field_required(field),
     attrs={"data-module": "process_state_field", 
-           "data-module-is_admin": h.ab_ps_is_admin(current_user_name, org_id) or 
-                                   h.ab_ps_is_authorized_member(current_user_name, org_id, data['process_state'])
+           "data-module-is_admin_or_approver": h.ab_ps_is_admin(current_user_name, org_id) or 
+                                   h.ab_ps_is_member_approver(current_user_name, org_id)
           }
     )
 %}
