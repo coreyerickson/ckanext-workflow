@@ -167,7 +167,7 @@ class WorkflowPlugin(plugins.SingletonPlugin):
 
 
     def after_update(self, context, pkg_dict):
-        deployment_mode = toolkit.asbool(config.get('ckan.ab_scheming.deployment', False))
+        deployment_mode = toolkit.asbool(config.get('ckan.ab_scheming.for_load_to_iddp', False))
         if deployment_mode: 
             return 
         if not pkg_dict.has_key('state'):
@@ -180,7 +180,7 @@ class WorkflowPlugin(plugins.SingletonPlugin):
 
                 
     def after_create(self, context, pkg_dict):
-        deployment_mode = toolkit.asbool(config.get('ckan.ab_scheming.deployment', False))
+        deployment_mode = toolkit.asbool(config.get('ckan.ab_scheming.for_load_to_iddp', False))
         if deployment_mode: 
             return 
         if not pkg_dict.has_key('state'):
@@ -211,7 +211,7 @@ class WorkflowPlugin(plugins.SingletonPlugin):
         return pkg_dict
 
     def before_search(self, search_params):
-        deployment_mode = toolkit.asbool(config.get('ckan.ab_scheming.deployment', False))
+        deployment_mode = toolkit.asbool(config.get('ckan.ab_scheming.for_load_to_iddp', False))
         if deployment_mode: 
             return search_params
     	user_member_of_orgs = [org['id'] for org
